@@ -1,0 +1,53 @@
+{
+ "n_initial": 20,
+ "n_iterations": 80,
+ "batch_size": 1,
+ "seed": 23,
+ "use_warping": false,
+ "use_dkl": false,
+ "use_physics": false,
+ "use_physics_features": true,
+ "warmstart": true,
+ "resume_from": null,
+ "pid_tag": "pfc",
+ "geometry_aware": true,
+ "n_dims": 7,
+ "dim_names": [
+  "L1L2_rad",
+  "L1L2_nr",
+  "L3L4_rad",
+  "L3L4_nr",
+  "C_wr",
+  "R_l",
+  "M_wr"
+ ],
+ "num_restarts": 5,
+ "raw_samples": 256,
+ "mc_samples": 128,
+ "constraints": {
+  "K_min": 1.0,
+  "B1_min": 0.0,
+  "S11_max_dB": -8.0,
+  "S22_max_dB": -8.0,
+  "OIP3_min_dBm": 18.0,
+  "Pdc_max_mW": 25.0
+ },
+ "bounds_lower": [
+  30.0,
+  4.5,
+  30.0,
+  3.5,
+  1.1e-06,
+  1e-06,
+  1.5e-06
+ ],
+ "bounds_upper": [
+  45.0,
+  7.0,
+  45.0,
+  6.0,
+  3.2e-06,
+  1e-05,
+  5e-06
+ ]
+}
