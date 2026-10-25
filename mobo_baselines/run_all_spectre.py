@@ -27,6 +27,8 @@ BASELINES = [
     ("optuna_motpe", run_optuna.run_motpe, {}),
     ("hebo_general", run_hebo.run_hebo, {}),
     ("ax_mobo", run_ax.run_ax, {}),
+    ("pymoo_nsga3", run_pymoo.run_nsga3, {}),
+    ("pymoo_moead", run_pymoo.run_moead, {}),
 ]
 
 
@@ -41,6 +43,10 @@ def main():
     parser.add_argument(
         "--only", nargs="*", choices=[b[0] for b in BASELINES], default=None,
         help="Restrict to a subset of baselines.",
+    )
+    parser.add_argument(
+        "--no-compare", action="store_true",
+        help="Skip the final aggregation (used by worker lanes; the master aggregates).",
     )
     args = parser.parse_args()
 
@@ -85,6 +91,9 @@ def main():
         for name, err in failures.items():
             logger.warning("  %s: %s", name, err)
 
+    if args.no_compare:
+        logger.info("Skipping aggregation (--no-compare).")
+        return
     logger.info("\nAggregating comparison...")
     out_dir = args.output_dir / "comparison_spectre"
     out_dir.mkdir(parents=True, exist_ok=True)

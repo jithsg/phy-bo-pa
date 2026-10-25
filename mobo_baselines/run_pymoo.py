@@ -15,6 +15,9 @@ from pathlib import Path
 
 import numpy as np
 from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.algorithms.moo.nsga3 import NSGA3
+from pymoo.algorithms.moo.moead import MOEAD
+from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.pm import PM
@@ -68,37 +71,74 @@ class PAProblem(ElementwiseProblem):
         ])
 
 
+class PAProblemPenalized(PAProblem):
+    """Unconstrained view of PAProblem for MOEA/D: F_i + penalty * sum(max(G, 0))."""
+    PENALTY = 1.0
+
+    def __init__(self, eval_fn):
+        super().__init__(eval_fn)
+        self.n_ieq_constr = 0
+
+    def _evaluate(self, x, out, *args, **kwargs):
+        tmp = {}
+        super()._evaluate(x, tmp, *args, **kwargs)
+        cv = float(np.sum(np.maximum(np.asarray(tmp["G"], dtype=float), 0.0)))
+        out["F"] = np.asarray(tmp["F"], dtype=float) + self.PENALTY * cv
+
+
+def _make_algorithm(kind: str, pop_size: int):
+    """NSGA-II (paper baseline) plus NSGA-III and MOEA/D (KBS revision, R5-5),
+    all with the same LHS/SBX/PM operators and a population of ~20."""
+    ops = dict(sampling=LHS(), crossover=SBX(eta=15, prob=0.9), mutation=PM(eta=20))
+    if kind == "nsga2":
+        return NSGA2(pop_size=pop_size, eliminate_duplicates=True, **ops)
+    ref_dirs = get_reference_directions("das-dennis", 3, n_partitions=5)   # 21 directions
+    if kind == "nsga3":
+        return NSGA3(ref_dirs=ref_dirs, pop_size=len(ref_dirs), eliminate_duplicates=True, **ops)
+    if kind == "moead":
+        return MOEAD(ref_dirs=ref_dirs, n_neighbors=10, prob_neighbor_mating=0.7, **ops)
+    raise ValueError(kind)
+
+
+def run_nsga3(n_evals: int = 180, seed: int = 42, pop_size: int = 21, simulator: str = "spectre",
+              output_dir: Path = Path("results/mobo_baselines")):
+    return run_nsga2(n_evals, seed, pop_size, simulator, output_dir, kind="nsga3")
+
+
+def run_moead(n_evals: int = 180, seed: int = 42, pop_size: int = 21, simulator: str = "spectre",
+              output_dir: Path = Path("results/mobo_baselines")):
+    return run_nsga2(n_evals, seed, pop_size, simulator, output_dir, kind="moead")
+
+
 def run_nsga2(
     n_evals: int = 180,
     seed: int = 42,
     pop_size: int = 20,
     simulator: str = "spectre",
     output_dir: Path = Path("results/mobo_baselines"),
+    kind: str = "nsga2",
 ) -> BaselineTrajectory:
     setup_logging()
     seed_everything(seed)
+    baseline_name = BASELINE_NAME if kind == "nsga2" else f"pymoo_{kind}"
 
     trajectory = BaselineTrajectory(
-        baseline_name=BASELINE_NAME,
+        baseline_name=baseline_name,
         seed=seed,
         n_evals=n_evals,
         ref_point_obj=default_ref_point(),
     )
     eval_fn = make_eval_fn(trajectory, simulator=simulator)
-    problem = PAProblem(eval_fn=eval_fn)
+    # pymoo's MOEA/D has no constraint handling: use the penalized variant
+    # (total constraint violation added to every objective).
+    problem = PAProblemPenalized(eval_fn=eval_fn) if kind == "moead" else PAProblem(eval_fn=eval_fn)
 
-    algorithm = NSGA2(
-        pop_size=pop_size,
-        sampling=LHS(),
-        crossover=SBX(eta=15, prob=0.9),
-        mutation=PM(eta=20),
-        eliminate_duplicates=True,
-    )
+    algorithm = _make_algorithm(kind, pop_size)
     termination = MaximumFunctionCallTermination(n_max_evals=n_evals)
 
     logger.info("=" * 64)
-    logger.info("NSGA-II (pymoo) | budget=%d | pop=%d | seed=%d | sim=%s",
-                n_evals, pop_size, seed, simulator)
+    logger.info("%s (pymoo) | budget=%d | pop=%d | seed=%d | sim=%s",
+                kind.upper(), n_evals, pop_size, seed, simulator)
     logger.info("=" * 64)
 
     minimize(problem, algorithm, termination, seed=seed, verbose=False)
