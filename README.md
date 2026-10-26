@@ -2,8 +2,8 @@
 
 Code and per-evaluation data for the paper:
 
-> *Geometry-Aware Multi-Objective Bayesian Optimization of CMOS Power
-> Amplifiers: Where Should Physical Knowledge Enter?* — J. Jithish,
+> *Geometry-Aware Multi-Objective Bayesian Optimization for CMOS Power Amplifier
+> Design: Evaluating Physical Knowledge Integration* — J. Jithish,
 > J. S. Ang, N. Mahalingam, B. K. Thangarasu, K. S. Yeo (Knowledge-Based
 > Systems, under review; revised October 2026. Earlier title: *Physics-Informed
 > Bayesian Optimization of CMOS Power Amplifiers: Constraints, Representations,
