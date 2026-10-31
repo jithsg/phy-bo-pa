@@ -556,6 +556,8 @@ def get_candidates(
     bounds_norm: torch.Tensor,
     config: OptimizationConfig,
     use_din_constraint: bool = True,
+    pibo_prior=None,
+    pibo_n: int = 1,
 ) -> torch.Tensor:
     """Optimize qLogNEHVI with analytical geometry constraints.
 
@@ -567,6 +569,11 @@ def get_candidates(
        snapped BO whose acquisition optimizer is not told about d_in; invalid
        proposals are then caught post hoc by evaluate_point, exactly as in the
        non-geometry-aware Stage I).
+
+    pibo_prior (pibo_prior.PriorSpec, optional): πBO-style baseline. The
+    acquisition becomes log qLogNEHVI(x) + (β/n) log π(x) with n = pibo_n the
+    1-indexed BO iteration (Hvarfner et al., 2022, Eq. 6). Everything else
+    (model, constraints, optimizer settings) is unchanged.
     """
     sampler = SobolQMCNormalSampler(
         sample_shape=torch.Size([config.mc_samples])
@@ -592,6 +599,10 @@ def get_candidates(
         prune_baseline=True,
         cache_root=False,
     )
+    if pibo_prior is not None:
+        from pibo_prior import PriorWeightedAcqf
+        acqf = PriorWeightedAcqf(acqf, pibo_prior, pibo_n)
+        logger.info("piBO prior weight gamma_n = beta/n = %.4f (n=%d)", acqf.gamma, pibo_n)
 
     # Analytical d_in as linear inequality_constraints on input space X.
     # Format: list of (indices, coefficients, rhs) where coeff @ X[indices] >= rhs.
@@ -651,8 +662,12 @@ def run_bo(
     warmstart_centers: list | None = None,
     seed_results: list | None = None,
     use_din_constraint: bool = True,
+    pibo_prior=None,
 ):
     """Run geometry-aware BO loop.
+
+    pibo_prior: optional pibo_prior.PriorSpec; when given, the acquisition is
+    the πBO-style prior-weighted log qLogNEHVI (see get_candidates).
 
     Key differences from bo_loop.py:
     - DoE is geometry-filtered (no d_in rejections)
@@ -690,6 +705,7 @@ def run_bo(
         "pid_tag": pid_tag,
         "geometry_aware": True,
         "use_din_constraint": use_din_constraint,
+        "pibo_prior": pibo_prior.as_dict() if pibo_prior is not None else None,
         "n_dims": N_DIMS,
         "dim_names": DIM_NAMES,
         "num_restarts": config.num_restarts,
@@ -715,6 +731,9 @@ def run_bo(
     else:
         print(f"  Geometry constraints: PDK grid snap ONLY "
               f"(d_in inequality DISABLED — constraint-only ablation arm)")
+    if pibo_prior is not None:
+        print(f"  piBO prior: beta={pibo_prior.beta:g}, sigma={pibo_prior.sigma:g} "
+              f"of each domain, eps={pibo_prior.eps:g}, centre={pibo_prior.center}")
     print(f"  Point ID prefix: {pid_prefix}")
     print("=" * 60)
 
@@ -875,7 +894,11 @@ def run_bo(
         candidates_norm = get_candidates(
             model_list, train_X_norm, ref_point, bounds_norm, config,
             use_din_constraint=use_din_constraint,
+            pibo_prior=pibo_prior, pibo_n=iteration + 1,
         )
+        if pibo_prior is not None:
+            print(f"    piBO gamma_n = {pibo_prior.weight(iteration + 1):.4f} "
+                  f"(n={iteration + 1})")
 
         # Unnormalize to original scale
         candidates_raw = unnormalize(candidates_norm, BOUNDS).cpu().numpy()

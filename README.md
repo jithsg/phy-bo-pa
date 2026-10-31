@@ -52,6 +52,9 @@ netlist.py, evaluate.py, parser.py, simulator.py   Spectre evaluation chain
 campaign_*.py, run_*.py     campaign drivers for every experiment
 analyze_constraint_ablation.py, seedlevel_repr_table.py   table generators
 mobo_baselines/             Ax / HEBO / Optuna / pymoo baselines (NSGA-II, NSGA-III, MOEA/D)
+pibo_prior.py, pibo_lane.py, pibo_validate.py   piBO-style prior-weighted qLogNEHVI baseline
+                            (Hvarfner et al. 2022 rule on the zero-mean backbone; prior centred on
+                            the manual design; validation checks) -- Section 4.9, Tables 11-13
 sweep_lane.py               Stage-I budget sweep: extend the zero-mean stage and branch the
                             physics-informed stage at N1 (Section 5.5)
 campaign_kbs/               revision campaign: analysis of the five-seed benchmark and sweep
@@ -69,9 +72,12 @@ data/pvt/pvt_summary.csv    corner-verification results of the original study
 data/runs/kbs_results/      revision campaign: bl_<method>_s<seed>/ (five-seed benchmark,
                             Table 11), br_n<N1>_s<seed>/ and ext_s<seed>/ (Stage-I budget
                             sweep, Table 18), JSON only
+data/runs/kbs_results/pibo_s<seed>/   piBO-style baseline, five seeds (Table 11, 8th method)
+data/kbs/pibo/              its per-seed CSV, validation output, timing replay and the
+                            Spectre/optimizer cost breakdown of every method (Table 13)
 data/runs/cabl_nodin_ext_s* no-physics arm continued to 180 evaluations (Table 18, ‡ row)
 data/runs/mobo_baselines/   seed-42 external-optimizer runs of the original study
-data/kbs/pvt_results.csv    27-condition corner check of 36 designs (Tables 10 and 12)
+data/kbs/pvt_results.csv    27-condition corner check of 41 designs (Tables 10 and 12)
 data/kbs/analysis_summary.json, nodin_ext_summary.json   outputs of the analysis scripts
 data/constraint_ablation_summary.csv
 ```
@@ -88,7 +94,9 @@ data/constraint_ablation_summary.csv
 | Constraint-only ablation | `data/runs/cabl_*` + `analyze_constraint_ablation.py` |
 | Random-search control | `data/random_search/` |
 | Corner verification, Table 10 and Section 4.7 | `data/kbs/pvt_results.csv` + `campaign_kbs/table10_from_csv.py` (designs `proposed_s42`, `paper_II1_s42`, `paper_baseline`) |
-| Benchmark against six optimizers, Table 11, Figs. 10-11 | `data/runs/kbs_results/bl_*` (+ `data/runs/mobo_baselines/*_seed42.json`) + `campaign_kbs/analyze_kbs.py all`, `campaign_kbs/make_tables.py`, `plots/generate_pareto3d.py`, `plots/generate_convergence.py` |
+| Benchmark against seven optimizers, Table 11, Figs. 10-11 | `data/runs/kbs_results/bl_*` (+ `data/runs/mobo_baselines/*_seed42.json`) + `campaign_kbs/analyze_kbs.py all`, `campaign_kbs/make_tables.py`, `plots/generate_pareto3d.py`, `plots/generate_convergence.py` |
+| piBO-style prior-weighted baseline vs. its zero-mean control (Table 11 row, Section 4.9) | `data/runs/kbs_results/pibo_s*` vs. `ext_s*` + `campaign_kbs/analyze_pibo.py`; validation `pibo_validate.py 42`; run `pibo_lane.py <seed>` |
+| Spectre / optimizer / total time per method, Table 13 | `data/kbs/pibo/cost_breakdown.csv` (`campaign_kbs/replay_timing.py` for the host factor; lane logs are not shipped) |
 | Corner robustness of every optimizer's best design, Table 12 | `data/kbs/pvt_results.csv` + `campaign_kbs/analyze_pvt.py --latex` |
 | Stage-I budget sweep, Table 18, Figs. 12-13 | `data/runs/kbs_results/br_n*_s*`, `ext_s*` + `campaign_kbs/analyze_kbs.py all`, `plots/generate_sweep_fig.py`, `plots/generate_sweep_traces.py` |
 | No-physics arm at 180 evaluations (Table 18, ‡ row) | `data/runs/cabl_nodin_ext_s*` + `campaign_kbs/analyze_nodin_ext.py` |

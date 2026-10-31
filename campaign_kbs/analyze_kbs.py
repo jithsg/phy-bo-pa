@@ -28,7 +28,7 @@ from botorch.utils.multi_objective.box_decompositions.non_dominated import (
 )
 
 BASE = Path(__file__).resolve().parent.parent
-RES = BASE / "data" / "runs"   # public layout: data/runs/<campaign>
+RES = BASE / "results"
 KBS = RES / "kbs_results"
 SEEDS = (42, 7, 11, 23, 101)
 N1_LIST = (0, 20, 40, 60, 80, 100, 120, 160)
@@ -62,7 +62,14 @@ def ours_run(seed: int) -> list[dict] | None:
     return _load(RES / f"ms_stage2_s{seed}" / "all_results.json")
 
 
+def pibo_run(seed: int) -> list[dict] | None:
+    """πBO-style prior-weighted qLogNEHVI baseline (pipeline record format)."""
+    return _load(RES / f"pibo_s{seed}" / "all_results.json")
+
+
 def baseline_run(method: str, seed: int) -> list[dict] | None:
+    if method == "pibo":
+        return pibo_run(seed)
     for p in (KBS / f"bl_{method}_s{seed}" / "mobo_baselines" / f"{method}_seed{seed}.json",
               RES / "mobo_baselines" / f"{method}_seed{seed}.json"):
         d = _load(p)
@@ -105,9 +112,23 @@ def refpt(Y: np.ndarray) -> np.ndarray:
 def stats(Y: np.ndarray, F: np.ndarray, ref: np.ndarray, n: int) -> dict:
     Y, F = Y[:n], F[:n]
     fe = Y[F]
+    best = fe[np.argmax(fe[:, 0])] if len(fe) else None
     return {"n": len(Y), "feas": int(F.sum()),
-            "best_pae": float(fe[:, 0].max()) if len(fe) else float("nan"),
+            "best_pae": float(best[0]) if best is not None else float("nan"),
+            "best_gain": float(best[1]) if best is not None else float("nan"),
             "hv": hv(fe, ref)}
+
+
+def method_run(method: str, seed: int) -> tuple[np.ndarray, np.ndarray, int] | None:
+    """(objectives, feasible mask, rejected count) for any compared method, or None."""
+    if method == "proposed":
+        r = ours_run(seed)
+        return (objs_ours(r), feas_ours(r), sum(1 for p in r if p.get("rejected"))) if r else None
+    if method == "pibo":
+        r = pibo_run(seed)
+        return (objs_ours(r), feas_ours(r), sum(1 for p in r if p.get("rejected"))) if r else None
+    b = baseline_run(method, seed)
+    return (objs_bl(b), feas_bl(b), sum(1 for p in b if p.get("rejected"))) if b else None
 
 
 # -------------------------------------------------------------------------- sweep
@@ -149,13 +170,10 @@ def analyze_baselines() -> dict:
     print(f"{'seed':>5} {'method':<14} {'n':>4} {'rej':>4} {'feas@100':>8} {'feas@180':>8} {'PAE@100':>8} {'PAE@180':>8} {'HV@180':>10}")
     for s in SEEDS:
         runs: dict[str, tuple[np.ndarray, np.ndarray, int]] = {}
-        o = ours_run(s)
-        if o:
-            runs["proposed"] = (objs_ours(o), feas_ours(o), sum(1 for r in o if r.get("rejected")))
-        for m in BASELINES:
-            b = baseline_run(m, s)
-            if b:
-                runs[m] = (objs_bl(b), feas_bl(b), sum(1 for r in b if r.get("rejected")))
+        for m in ("proposed",) + BASELINES + ("pibo",):
+            r = method_run(m, s)
+            if r:
+                runs[m] = r
         if not runs:
             continue
         Yall = np.vstack([Y[F] for Y, F, _ in runs.values() if F.any()] or [np.zeros((1, 3))])
@@ -164,8 +182,11 @@ def analyze_baselines() -> dict:
         for m, (Y, F, rej) in runs.items():
             a, b = stats(Y, F, ref, 100), stats(Y, F, ref, BUDGET)
             out[s][m] = {"n": len(Y), "rej": rej, "feas100": a["feas"], "feas180": b["feas"],
-                         "pae100": a["best_pae"], "pae180": b["best_pae"], "hv180": b["hv"],
-                         "complete": len(Y) >= BUDGET}
+                         "pae100": a["best_pae"], "pae180": b["best_pae"], "gain180": b["best_gain"],
+                         "hv180": b["hv"], "complete": len(Y) >= BUDGET}
+        best_hv = max(v["hv180"] for v in out[s].values() if v["complete"]) or float("nan")
+        for v in out[s].values():
+            v["hv_best"] = v["hv180"] / best_hv if best_hv == best_hv and best_hv > 0 else float("nan")
             flag = "" if len(Y) >= BUDGET else f"  (partial: {len(Y)}/{BUDGET})"
             print(f"{s:>5} {m:<14} {len(Y):>4} {rej:>4} {a['feas']:>8} {b['feas']:>8} "
                   f"{a['best_pae']:>8.1f} {b['best_pae']:>8.1f} {b['hv']:>10.0f}{flag}")
@@ -179,7 +200,7 @@ def main() -> None:
         res["sweep"] = analyze_sweep()
     if mode in ("baselines", "all"):
         res["baselines"] = analyze_baselines()
-    outp = BASE / "data" / "kbs" / "analysis_summary.json"
+    outp = BASE / "campaign_kbs" / "analysis_summary.json"
     json.dump(res, open(outp, "w"), indent=1, default=lambda x: None if x != x else x)
     print(f"\nwritten {outp}")
 

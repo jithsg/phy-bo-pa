@@ -1,0 +1,79 @@
+{
+  "n_initial": 20,
+  "n_iterations": 160,
+  "batch_size": 1,
+  "seed": 42,
+  "use_warping": false,
+  "use_dkl": false,
+  "use_physics": false,
+  "use_physics_features": false,
+  "warmstart": false,
+  "resume_from": "/Users/jithish/bo_pa_geo/results/pibo_s42/resume_prefix.json",
+  "pid_tag": "pibo",
+  "geometry_aware": true,
+  "use_din_constraint": true,
+  "pibo_prior": {
+    "center_norm": [
+      0.3333333333333333,
+      0.8,
+      1.0,
+      0.4,
+      0.23809523809523805,
+      0.061111111111111116,
+      0.4571428571428571
+    ],
+    "center_raw": [
+      35.0,
+      6.5,
+      45.0,
+      4.5,
+      1.6e-06,
+      1.55e-06,
+      3.1e-06
+    ],
+    "sigma_frac": 0.25,
+    "eps": 1e-12,
+    "beta": 16.0,
+    "decay": "gamma_n = beta / n, n = 1..N (BO iteration after the DoE)",
+    "source": "config.PRESIM_X and config.BOUNDS_* only"
+  },
+  "n_dims": 7,
+  "dim_names": [
+    "L1L2_rad",
+    "L1L2_nr",
+    "L3L4_rad",
+    "L3L4_nr",
+    "C_wr",
+    "R_l",
+    "M_wr"
+  ],
+  "num_restarts": 5,
+  "raw_samples": 256,
+  "mc_samples": 128,
+  "constraints": {
+    "K_min": 1.0,
+    "B1_min": 0.0,
+    "S11_max_dB": -8.0,
+    "S22_max_dB": -8.0,
+    "OIP3_min_dBm": 18.0,
+    "Pdc_max_mW": 25.0
+  },
+  "bounds_lower": [
+    30.0,
+    4.5,
+    30.0,
+    3.5,
+    1.1e-06,
+    1e-06,
+    1.5e-06
+  ],
+  "bounds_upper": [
+    45.0,
+    7.0,
+    45.0,
+    6.0,
+    3.2e-06,
+    1e-05,
+    5e-06
+  ]
+}

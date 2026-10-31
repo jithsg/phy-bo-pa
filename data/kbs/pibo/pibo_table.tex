@@ -1,0 +1,33 @@
+\begin{table}[!t]
+\centering
+\caption{$\pi$BO-Style Prior-Weighted qLogNEHVI versus the Matched Zero-Mean Control (180 Evaluations, Five Seeds)}
+\label{tab:pibo}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llcccccc@{}}
+\toprule
+Seed & Method & Rej. & Feas.@180 & PAE@100 & PAE@180 & HV@180 / HV\textsubscript{ctrl} & $t_\mathrm{opt}/t_\mathrm{Spectre}$ \\
+\midrule
+42 & $\pi$BO-qLogNEHVI & 0 & 4 & 63.5 & 63.5 & 1.07 & 1.32 \\
+42 & Zero-mean control & 1 & 3 & 61.7 & 61.7 & 1.00 & 1.71 \\
+42 & Proposed pipeline & 14 & 17 & 66.3 & 66.3 & 1.53 & 1.2 \\
+7 & $\pi$BO-qLogNEHVI & 1 & 2 & 51.9 & 51.9 & 0.09 & 1.31 \\
+7 & Zero-mean control & 0 & 3 & 66.9 & 66.9 & 1.00 & 0.98 \\
+7 & Proposed pipeline & 0 & 3 & 66.9 & 66.9 & 1.00 & 1.2 \\
+11 & $\pi$BO-qLogNEHVI & 0 & 3 & 58.2 & 58.2 & 0.62 & 1.27 \\
+11 & Zero-mean control & 0 & 4 & 59.0 & 59.0 & 1.00 & 1.18 \\
+11 & Proposed pipeline & 0 & 2 & 59.0 & 59.0 & 1.00 & 1.2 \\
+23 & $\pi$BO-qLogNEHVI & 0 & 1 & 60.6 & 60.6 & 2.08 & 1.30 \\
+23 & Zero-mean control & 0 & 4 & 61.7 & 61.7 & 1.00 & 1.01 \\
+23 & Proposed pipeline & 0 & 4 & 61.7 & 61.7 & 0.93 & 1.2 \\
+101 & $\pi$BO-qLogNEHVI & 0 & 3 & 57.1 & 57.1 & 1.39 & 1.49 \\
+101 & Zero-mean control & 0 & 4 & 57.6 & 57.6 & 1.00 & 2.37 \\
+101 & Proposed pipeline & 0 & 6 & 57.6 & 65.1 & 2.18 & 1.2 \\
+\midrule
+\multicolumn{8}{@{}l}{\emph{Median over seeds}} \\
+-- & $\pi$BO-qLogNEHVI (5) & 0 & 3 & 58.2 & 58.2 & 1.07 & 1.31 \\
+-- & Zero-mean control (5) & 0 & 4 & 61.7 & 61.7 & 1.00 & 1.18 \\
+-- & Proposed pipeline (5) & 0 & 4 & 61.7 & 65.1 & 1.00 & 1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}

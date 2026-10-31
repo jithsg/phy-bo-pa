@@ -36,7 +36,14 @@ def main() -> None:
             b = max(F, key=lambda p: p["pae_pct"])
             rows.append(dict(design_id=f"{m}_s{s}", method=m, seed=s, pae=b["pae_pct"],
                              x=b["x"], pid=b["point_id"]))
-    json.dump(rows, open(HERE.parent / "data" / "kbs" / "pvt_designs.json", "w"), indent=1)
+        p = A.pibo_run(s)
+        if p and len(p) >= A.BUDGET:
+            F = [q for q in p[:A.BUDGET] if q.get("feasible") and not q.get("rejected")]
+            if F:
+                b = max(F, key=lambda q: q["objectives"]["PAE_pct"])
+                rows.append(dict(design_id=f"pibo_s{s}", method="pibo", seed=s,
+                                 pae=b["objectives"]["PAE_pct"], x=b["x"], pid=b["point_id"]))
+    json.dump(rows, open(HERE / "pvt_designs.json", "w"), indent=1)
     print(f"{len(rows)} designs: " + ", ".join(r["design_id"] for r in rows))
 
 

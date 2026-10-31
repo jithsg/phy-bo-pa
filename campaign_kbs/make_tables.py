@@ -17,12 +17,13 @@ from pathlib import Path
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
-SUMMARY = HERE.parent / "data" / "kbs" / "analysis_summary.json"
+SUMMARY = HERE / "analysis_summary.json"
 SEEDS = ("42", "7", "11", "23", "101")
 N1_LIST = ("0", "20", "40", "60", "80", "100", "120", "160")
 METHODS = [("proposed", "Proposed pipeline"), ("ax_mobo", "Ax qNEHVI"),
            ("hebo_general", "HEBO"), ("optuna_motpe", "Optuna MOTPE"),
-           ("pymoo_nsga2", "NSGA-II"), ("pymoo_nsga3", "NSGA-III"), ("pymoo_moead", "MOEA/D")]
+           ("pymoo_nsga2", "NSGA-II"), ("pymoo_nsga3", "NSGA-III"), ("pymoo_moead", "MOEA/D"),
+           ("pibo", r"$\pi$BO-qLogNEHVI")]
 
 
 def _f(x, fmt="{:.1f}") -> str:
@@ -51,30 +52,29 @@ def sweep_table(sw: dict) -> str:
 
 
 def baseline_table(bl: dict) -> str:
-    lines = [r"\begin{tabular}{@{}llcccccc@{}}", r"\toprule",
-             r"Seed & Method & Rej. & Feas.@100 & Feas.@180 & PAE@100 & PAE@180 & HV@180 / HV\textsubscript{prop.} \\", r"\midrule"]
+    """Table 11 body of the revised manuscript: HV relative to the best method of the seed."""
+    lines = [r"\begin{tabular}{@{}llccccccc@{}}", r"\toprule",
+             r"Seed & Method & Rej. & \makecell{Feas.\\@100} & \makecell{Feas.\\@180} & \makecell{PAE\\@100} & "
+             r"\makecell{PAE\\@180} & \makecell{Gain\\@180} & \makecell{HV@180 /\\HV\textsubscript{best}} \\", r"\midrule"]
     for s in SEEDS:
         for key, label in METHODS:
             st = bl.get(s, {}).get(key)
             if not st:
-                lines.append(f"{s} & {label} & -- & -- & -- & -- & -- & -- \\\\")
+                lines.append(f"{s} & {label} & -- & -- & -- & -- & -- & -- & -- \\\\")
                 continue
             part = "" if st.get("complete") else r"\textsuperscript{p}"
-            ours = bl.get(s, {}).get("proposed", {}).get("hv180") or float("nan")
-            ratio = st["hv180"] / ours if ours and ours == ours else float("nan")
-            st["hv_ratio"] = ratio
             lines.append(f"{s} & {label}{part} & {st['rej']} & {st['feas100']} & {st['feas180']} & "
-                         f"{_f(st['pae100'])} & {_f(st['pae180'])} & {_f(ratio, '{:.2f}')} \\\\")
+                         f"{_f(st['pae100'])} & {_f(st['pae180'])} & {_f(st.get('gain180'))} & {_f(st['hv_best'], '{:.2f}')} \\\\")
         lines.append(r"\midrule")
     # medians over seeds per method (complete runs)
-    lines.append(r"\multicolumn{8}{@{}l}{\emph{Median over seeds (complete runs)}} \\")
+    lines.append(r"\multicolumn{9}{@{}l}{\emph{Median over seeds (complete runs)}} \\")
     for key, label in METHODS:
         sts = [bl[s][key] for s in SEEDS if key in bl.get(s, {}) and bl[s][key].get("complete")]
         if not sts:
             continue
         med = lambda k: float(np.nanmedian([t[k] for t in sts]))  # noqa: E731
         lines.append(f"-- & {label} ({len(sts)}) & {med('rej'):.0f} & {med('feas100'):.0f} & {med('feas180'):.0f} & "
-                     f"{med('pae100'):.1f} & {med('pae180'):.1f} & {med('hv_ratio'):.2f} \\\\")
+                     f"{med('pae100'):.1f} & {med('pae180'):.1f} & {med('gain180'):.1f} & {med('hv_best'):.2f} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines)
 

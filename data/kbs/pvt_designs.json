@@ -96,6 +96,22 @@
   "pid": "baselines_pymoo_nsga3_s42_eval0172"
  },
  {
+  "design_id": "pibo_s42",
+  "method": "pibo",
+  "seed": 42,
+  "pae": 63.45614232790959,
+  "x": [
+   36.0,
+   7.0,
+   45.0,
+   6.0,
+   3.1753350708606052e-06,
+   1.3740701173010821e-06,
+   3.587886725989506e-06
+  ],
+  "pid": "pibo_s42_batch035_pt0"
+ },
+ {
   "design_id": "proposed_s7",
   "method": "proposed",
   "seed": 7,
@@ -206,6 +222,22 @@
    2.8656545204569803e-06
   ],
   "pid": "baselines_pymoo_moead_s7_eval0166"
+ },
+ {
+  "design_id": "pibo_s7",
+  "method": "pibo",
+  "seed": 7,
+  "pae": 51.94613369612573,
+  "x": [
+   41.0,
+   6.0,
+   36.0,
+   4.5,
+   1.9583577186337885e-06,
+   1.000001066361801e-06,
+   3.6443252829308486e-06
+  ],
+  "pid": "pibo_s7_batch018_pt0"
  },
  {
   "design_id": "proposed_s11",
@@ -320,6 +352,22 @@
   "pid": "baselines_pymoo_moead_s11_eval0174"
  },
  {
+  "design_id": "pibo_s11",
+  "method": "pibo",
+  "seed": 11,
+  "pae": 58.218166415862825,
+  "x": [
+   35.0,
+   6.5,
+   40.0,
+   5.0,
+   1.6837243722933074e-06,
+   1e-06,
+   3.648884131835519e-06
+  ],
+  "pid": "pibo_s11_batch023_pt0"
+ },
+ {
   "design_id": "proposed_s23",
   "method": "proposed",
   "seed": 23,
@@ -430,6 +478,22 @@
    3.4145743248349525e-06
   ],
   "pid": "baselines_pymoo_moead_s23_eval0170"
+ },
+ {
+  "design_id": "pibo_s23",
+  "method": "pibo",
+  "seed": 23,
+  "pae": 60.55156316936172,
+  "x": [
+   37.0,
+   7.0,
+   42.0,
+   5.0,
+   2.648027407390568e-06,
+   1.0000002533092745e-06,
+   3.489722488878946e-06
+  ],
+  "pid": "pibo_s23_batch022_pt0"
  },
  {
   "design_id": "proposed_s101",
@@ -544,35 +608,19 @@
   "pid": "baselines_pymoo_moead_s101_eval0166"
  },
  {
-  "design_id": "paper_II1_s42",
-  "method": "paper_II1",
-  "seed": 42,
-  "pae": 62.340974539724755,
+  "design_id": "pibo_s101",
+  "method": "pibo",
+  "seed": 101,
+  "pae": 57.05409389641049,
   "x": [
    37.0,
    7.0,
-   34.0,
-   6.0,
-   2.2756052902188007e-06,
-   1.0034922026630865e-06,
-   2.8564775338106175e-06
-  ],
-  "pid": "geo21_warm_geoaware_s42_batch116_pt0"
- },
- {
-  "design_id": "paper_baseline",
-  "method": "paper_baseline",
-  "seed": 0,
-  "pae": 53.32,
-  "x": [
-   35.0,
-   6.5,
    45.0,
    4.5,
-   1.6e-06,
-   1.55e-06,
-   3.1e-06
+   1.7552305449253579e-06,
+   1e-06,
+   2.801173969750003e-06
   ],
-  "pid": "PRESIM_X"
+  "pid": "pibo_s101_batch021_pt0"
  }
 ]

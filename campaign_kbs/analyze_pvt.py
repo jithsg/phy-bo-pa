@@ -15,9 +15,10 @@ from pathlib import Path
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
-CSV = HERE.parent / "data" / "kbs" / "pvt_results.csv"
+CSV = HERE / "pvt_results.csv"
 METHODS = [("proposed", "Proposed"), ("hebo_general", "HEBO"), ("ax_mobo", "Ax qNEHVI"),
-           ("optuna_motpe", "MOTPE"), ("pymoo_nsga2", "NSGA-II"), ("pymoo_nsga3", "NSGA-III"), ("pymoo_moead", "MOEA/D")]
+           ("optuna_motpe", "MOTPE"), ("pymoo_nsga2", "NSGA-II"), ("pymoo_nsga3", "NSGA-III"), ("pymoo_moead", "MOEA/D"),
+           ("pibo", r"$\pi$BO-qLogNEHVI")]
 SEEDS = ("42", "7", "11", "23", "101")
 
 
