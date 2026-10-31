@@ -3,7 +3,7 @@ compared optimizer at the 180-evaluation budget (R5-7).
 
     python3 plots/generate_pareto3d.py [seed]      (default 42)
 
-Output: plots/paper/fig_pareto3d_s{seed}.{png,svg}
+Output: plots/paper/fig_pareto3d_s{seed}.{png,svg}  (PNG at 600 dpi; EPS via cairosvg)
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ import sys
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.ticker import FormatStrFormatter, MultipleLocator  # noqa: E402
 import numpy as np  # noqa: E402
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,11 +28,12 @@ METHODS = [("proposed", "Proposed pipeline", "#D55E00", "o"),
            ("optuna_motpe", "Optuna MOTPE", "#CC79A7", "D"),
            ("pymoo_nsga2", "NSGA-II", "#E69F00", "v"),
            ("pymoo_nsga3", "NSGA-III", "#56B4E9", "<"),
-           ("pymoo_moead", "MOEA/D", "#999999", ">")]
+           ("pymoo_moead", "MOEA/D", "#999999", ">"),
+           ("pibo", r"$\pi$BO-qLogNEHVI", "#000000", "P")]
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["Times New Roman", "DejaVu Serif"],
-    "font.size": 9, "axes.labelsize": 10, "legend.fontsize": 8,
-    "figure.dpi": 150, "savefig.dpi": 1000, "savefig.bbox": "tight",
+    "font.size": 9, "axes.labelsize": 10.5, "legend.fontsize": 9,
+    "figure.dpi": 150, "savefig.dpi": 600, "savefig.bbox": "tight",
 })
 
 
@@ -58,13 +60,17 @@ def load(seed: int) -> dict[str, np.ndarray]:
         if b:
             Y, F = A.objs_bl(b), A.feas_bl(b)
             data[m] = Y[:A.BUDGET][F[:A.BUDGET]]
+    p = A.pibo_run(seed)            # pipeline record format (zero-mean backbone + prior)
+    if p:
+        Y, F = A.objs_ours(p), A.feas_ours(p)
+        data["pibo"] = Y[:A.BUDGET][F[:A.BUDGET]]
     return data
 
 
 def main() -> None:
     seed = int(sys.argv[1]) if len(sys.argv) > 1 else 42
     data = load(seed)
-    fig = plt.figure(figsize=(5.2, 4.2))
+    fig = plt.figure(figsize=(4.8, 4.0))
     ax = fig.add_subplot(1, 1, 1, projection="3d")
     for key, label, col, mk in METHODS:
         Y = data.get(key)
@@ -72,9 +78,9 @@ def main() -> None:
             continue
         pm = pareto_mask(Y)
         P = Y[pm]
-        ax.scatter(P[:, 0], P[:, 1], P[:, 2], s=34, marker=mk, color=col, alpha=0.95,
+        ax.scatter(P[:, 0], P[:, 1], P[:, 2], s=40, marker=mk, color=col, alpha=0.95,
                    edgecolors="white", linewidths=0.5,
-                   label=f"{label}: {pm.sum()} Pareto / {len(Y)} feasible")
+                   label=f"{label} ({pm.sum()} / {len(Y)})")
         # drop lines to the floor make depth readable
         z0 = 15.1
         for x, y, z in P:
@@ -83,15 +89,25 @@ def main() -> None:
     ax.set_ylabel("Gain (dB)", labelpad=4)
     ax.set_zlabel("$P_\\mathrm{sat}$ (dBm)", labelpad=4)
     ax.set_zlim(15.1, None)
+    ax.xaxis.set_major_locator(MultipleLocator(5))
+    ax.zaxis.set_major_locator(MultipleLocator(0.1))
+    ax.zaxis.set_major_formatter(FormatStrFormatter("%.1f"))
     ax.view_init(elev=20, azim=-55)
-    ax.tick_params(labelsize=7.5, pad=1)
+    ax.tick_params(labelsize=8.5, pad=1)
     ax.grid(True, alpha=0.3)
     handles, labels = ax.get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, -0.01))
-    fig.tight_layout(rect=(0, 0.12, 1, 1))
+    fig.legend(handles, labels, loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, -0.01),
+               title="Pareto-optimal / feasible designs per method", title_fontsize=9, columnspacing=1.2, handletextpad=0.4)
+    n_methods = len(handles)
+    bottom = 0.20 if n_methods <= 6 else 0.26          # 3 or 4 legend rows
+    fig.tight_layout(rect=(0, bottom, 0.94, 1))         # right margin keeps the z-label inside
     os.makedirs(OUTDIR, exist_ok=True)
     for ext in ("png", "svg"):
         fig.savefig(os.path.join(OUTDIR, f"fig_pareto3d_s{seed}.{ext}"))
+    for key, label, _, _ in METHODS:              # counts for the figure notes
+        Y = data.get(key)
+        n = 0 if Y is None else len(Y)
+        print(f"  {label:<18} pareto/feasible = {pareto_mask(Y).sum() if n else 0} / {n}")
     print("saved", os.path.join(OUTDIR, f"fig_pareto3d_s{seed}.png"))
 
 
